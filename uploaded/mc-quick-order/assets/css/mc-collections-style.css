@@ -1,0 +1,311 @@
+/**
+ * Maison Common Quick Order Plugin Styles
+ * 
+ * Basiert auf dem echten Maison Common Design
+ * 
+ * @version 1.1.0
+ */
+
+/* Collections Widget Styling - echtes Maison Common Design */
+.mc-collections-widget {
+    background: #fff;
+    margin-bottom: 20px;
+}
+
+.mc-collections-widget .widget-title {
+    margin: 0;
+    padding: 0 0 20px 0;
+    font-size: 18px;
+    font-weight: normal;
+    color: #333;
+    background: none;
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+/* Collections Navigation */
+.mc-collections-nav {
+    padding: 0;
+}
+
+.mc-collections-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.mc-collections-list li {
+    margin: 0;
+    border: 1px solid #ddd;
+    margin-bottom: 10px;
+}
+
+.mc-collections-list li a {
+    display: block;
+    padding: 15px 20px;
+    color: #666;
+    text-decoration: none;
+    font-size: 18px;
+    line-height: 1.4;
+    transition: all 0.3s ease;
+    background-color: #f8f8f8;
+    text-align: center;
+}
+
+.mc-collections-list li a:hover {
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+.mc-collections-list li.active a {
+    background-color: #f8f8f8;
+    color: #333;
+    border: 2px solid #dfa9c4;
+    font-weight: 900;
+}
+
+/* User Switching Widget */
+.mc-user-switching-widget {
+    background: #fff;
+    margin-bottom: 20px;
+    margin-top: 30px;
+}
+
+.mc-user-switching-widget .widget-title {
+    margin: 0;
+    padding: 0 0 20px 0;
+    font-size: 18px;
+    font-weight: normal;
+    color: #333;
+    background: none;
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+.mc-user-switching-widget .widget-content {
+    padding: 20px;
+}
+
+/* Customer Search */
+.mc-customer-search {
+    padding: 0;
+}
+
+.mc-customer-search p {
+	margin-bottom: 0;
+}
+
+.mc-customer-search label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #333;
+}
+
+#mc-customer-search {
+    width: 100%;
+    padding: 10px 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+#mc-customer-search:focus {
+    outline: none;
+    border-color: #2c5aa0;
+    box-shadow: 0 0 0 2px rgba(44, 90, 160, 0.1);
+}
+
+/* Customer Results */
+.mc-customer-list {
+    list-style: none;
+    margin: 10px 0 0 0;
+    padding: 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    background: #fff;
+}
+
+.mc-customer-list li {
+    margin: 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.mc-customer-list li:last-child {
+    border-bottom: none;
+}
+
+.mc-customer-link {
+    display: block;
+    padding: 12px 15px;
+    text-decoration: none;
+    color: #333;
+    transition: background-color 0.2s ease;
+}
+
+.mc-customer-link:hover {
+    background-color: #f8f8f8;
+    color: #2c5aa0;
+}
+
+.mc-customer-link strong {
+    font-weight: 500;
+}
+
+.mc-customer-link small {
+    color: #666;
+    font-size: 12px;
+}
+
+/* Current User Display */
+.mc-current-user {
+    padding: 20px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.mc-current-user p {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+}
+
+.mc-current-user .button {
+    background: #2c5aa0;
+    color: #fff;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 13px;
+    display: inline-block;
+    transition: background-color 0.2s ease;
+}
+
+.mc-current-user .button:hover {
+    background: #1e3f73;
+    color: #fff;
+}
+
+/* Loading Animation */
+#mc-loading {
+    text-align: center;
+    padding: 40px 20px;
+    color: #666;
+    font-style: italic;
+}
+
+/* Quick Order Container */
+#mc-collections-container {
+    /* Entfernt zusätzliche Margins/Paddings die Layout-Probleme verursachen könnten */
+    padding: 20px;
+}
+
+#mc-quick-order-content {
+    /* Stellt sicher, dass der Content normal fließt */
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .mc-collections-widget,
+    .mc-user-switching-widget {
+        margin-bottom: 15px;
+    }
+    
+    .mc-collections-widget .widget-title,
+    .mc-user-switching-widget .widget-title {
+        padding: 12px 15px;
+        font-size: 13px;
+    }
+    
+    .mc-collections-list li a {
+        padding: 12px 15px;
+        font-size: 13px;
+    }
+    
+    .mc-customer-search {
+        padding: 15px;
+    }
+    
+    .mc-current-user {
+        padding: 15px;
+    }
+}
+
+/* Fallback Sidebar Styling */
+#mc-fallback-sidebar {
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border-radius: 4px;
+}
+
+/* Notice Styling */
+.mc-user-switching-notice {
+    padding: 20px;
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 4px;
+    margin: 10px 0;
+}
+
+.mc-user-switching-notice p {
+    margin: 0 0 10px 0;
+    color: #856404;
+}
+
+.mc-user-switching-notice p:last-child {
+    margin-bottom: 0;
+}
+
+/* Cart Totals Styling */
+.mc-cart-totals {
+    padding: 15px 20px;
+    margin: 20px 0;
+    background: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.mc-cart-totals-below-table {
+    margin-top: 20px;
+}
+
+.mc-ek-total,
+.mc-vk-total {
+    color: #333;
+}
+
+.mc-ek-total {
+    margin-right: 5px;
+}
+
+.mc-vk-total {
+    margin-left: 5px;
+}
+
+/* Header Cart Totals (smaller, more compact) */
+.mc-cart-totals.header-totals {
+    padding: 8px 12px;
+    margin: 0;
+    font-size: 14px;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+}
+
+/* Responsive Cart Totals */
+@media (max-width: 768px) {
+    .mc-cart-totals {
+        padding: 12px 15px;
+        font-size: 14px;
+    }
+    
+    .mc-cart-totals.header-totals {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+}
