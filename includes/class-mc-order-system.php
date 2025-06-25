@@ -214,12 +214,34 @@ class MC_Order_System {
         // Generate quick order table
         $quick_order_content = do_shortcode('[woocommerce_quick_order_table taxonomy="collection" categories="' . $collection_id . '" order="DESC" orderby="menu_order" only_on_stock="no"]');
         
+        // DEBUG: Log the generated content
+        error_log('MC Quick Order: Generated content length: ' . strlen($quick_order_content));
+        error_log('MC Quick Order: Generated content preview: ' . substr($quick_order_content, 0, 500));
+        
+        // Check if content contains a table
+        $has_table = strpos($quick_order_content, '<table') !== false;
+        $has_woocommerce_table = strpos($quick_order_content, 'woocommerce-quick-order-table') !== false;
+        error_log('MC Quick Order: Content has table: ' . ($has_table ? 'YES' : 'NO'));
+        error_log('MC Quick Order: Content has woocommerce-quick-order-table: ' . ($has_woocommerce_table ? 'YES' : 'NO'));
+        
+        // Check if collection has products
+        $products = get_posts(array(
+            'post_type' => 'product',
+            'posts_per_page' => -1,
+            'tax_query' => array(
+                array(
+                    'taxonomy' => 'collection',
+                    'field' => 'term_id',
+                    'terms' => $collection_id
+                )
+            )
+        ));
+        error_log('MC Quick Order: Collection ' . $collection_id . ' has ' . count($products) . ' products');
+        
         // Add cart totals below the table
         $quick_order_content .= '<div class="mc-cart-totals-below-table">';
         $quick_order_content .= do_shortcode('[mc_cart_totals]');
         $quick_order_content .= '</div>';
-        
-        error_log('MC Quick Order: Generated content length: ' . strlen($quick_order_content));
         
         wp_send_json_success(array(
             'collection_name' => $collection->name,

@@ -49,11 +49,22 @@ jQuery(document).ready(function($) {
             },
             success: function(response) {
                 if (response.success) {
+                    console.log('MC Debug: AJAX success, updating content...');
+                    
                     // Quick Order Inhalt aktualisieren
                     $('#mc-quick-order-content').html(response.data.quick_order_content);
                     
-                    // DataTables und andere JavaScript-Komponenten reinitialisieren
-                    reinitializeQuickOrderTable();
+                    console.log('MC Debug: Content updated, checking if table exists...');
+                    console.log('MC Debug: Table exists after HTML update:', $('#woocommerce-quick-order').length > 0);
+                    
+                    // TIMING-FIX: Warten bis DOM vollständig aktualisiert ist
+                    setTimeout(function() {
+                        console.log('MC Debug: Starting delayed reinitialization...');
+                        console.log('MC Debug: Table exists before reinit:', $('#woocommerce-quick-order').length > 0);
+                        
+                        // DataTables und andere JavaScript-Komponenten reinitialisieren
+                        reinitializeQuickOrderTable();
+                    }, 50); // 50ms Delay für DOM-Update
                     
                     // URL aktualisieren (optional, für bessere UX)
                     if (history.pushState) {
@@ -111,10 +122,21 @@ jQuery(document).ready(function($) {
             },
             success: function(response) {
                 if (response.success) {
+                    console.log('MC Debug: loadCollectionById AJAX success, updating content...');
+                    
                     $('#mc-quick-order-content').html(response.data.quick_order_content);
                     
-                    // DataTables und andere JavaScript-Komponenten reinitialisieren
-                    reinitializeQuickOrderTable();
+                    console.log('MC Debug: loadCollectionById content updated, checking if table exists...');
+                    console.log('MC Debug: loadCollectionById table exists after HTML update:', $('#woocommerce-quick-order').length > 0);
+                    
+                    // TIMING-FIX: Warten bis DOM vollständig aktualisiert ist
+                    setTimeout(function() {
+                        console.log('MC Debug: loadCollectionById starting delayed reinitialization...');
+                        console.log('MC Debug: loadCollectionById table exists before reinit:', $('#woocommerce-quick-order').length > 0);
+                        
+                        // DataTables und andere JavaScript-Komponenten reinitialisieren
+                        reinitializeQuickOrderTable();
+                    }, 50); // 50ms Delay für DOM-Update
                     
                     if (updateUrl && history.pushState) {
                         var newUrl = window.location.protocol + "//" + window.location.host + 
@@ -251,79 +273,57 @@ jQuery(document).ready(function($) {
      */
     function reinitializeQuickOrderTable() {
         console.log('MC Quick Order: Reinitializing Quick Order table components');
-        
-        // WooCommerce Quick Order DataTables reinitialisieren
-        if (typeof $.fn.DataTable !== 'undefined') {
-            // Bestehende DataTable-Instanz zerstören falls vorhanden
-            $('#woocommerce-quick-order-table').DataTable().destroy();
+
+        // WooCommerce Quick Order Plugin komplett reinitialisieren
+        if (typeof $.fn.quickOrder !== 'undefined' && typeof woocommerce_quick_order_options !== 'undefined') {
             
-            // DataTable neu initialisieren mit den ursprünglichen Einstellungen
-            $('#woocommerce-quick-order-table').DataTable({
-                "paging": true,
-                "searching": true,
-                "ordering": true,
-                "info": true,
-                "responsive": true,
-                "language": {
-                    "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/German.json"
+            var quickOrderTable = $('#woocommerce-quick-order');
+
+            // Zerstöre eine eventuell noch vorhandene DataTable-Instanz.
+            // Sicher ist sicher, auch wenn die vorherigen Logs zeigten, dass keine gefunden wurde.
+            if (quickOrderTable.length > 0 && $.fn.DataTable.isDataTable(quickOrderTable)) {
+                quickOrderTable.DataTable().destroy();
+                console.log('MC Quick Order: Destroyed existing DataTable instance.');
+            }
+
+            // *** DER ENTSCHEIDENDE FIX ***
+            // Entferne die Initialisierungs-Markierung des Plugins vom Body.
+            // Dies zwingt das Plugin, sich komplett neu zu initialisieren.
+            $("body").removeData('plugin_quickOrder');
+            console.log('MC Quick Order: Removed plugin instance data from body.');
+
+            // Stelle sicher, dass die Tabelle die vom Plugin erwartete Klasse hat.
+            if (quickOrderTable.length > 0 && !quickOrderTable.hasClass('datatables')) {
+                console.log('MC Debug: Adding missing "datatables" class to table');
+                quickOrderTable.addClass('datatables');
+            }
+            
+            // Rufe das Plugin neu auf. Es wird sich jetzt initialisieren,
+            // da die "plugin_quickOrder" Daten nicht mehr am Body hängen.
+            console.log('MC Quick Order: Reinitializing WooCommerce Quick Order Plugin.');
+            $("body").quickOrder(woocommerce_quick_order_options);
+            
+            // Kurzer Check nach der Reinitialisierung
+            setTimeout(function() {
+                var headerExistsAfter = $('.dataTables_filter, .dataTables_length, .dataTables_info').length > 0;
+                console.log('MC Quick Order: Check after reinit - Header elements exist:', headerExistsAfter);
+                if (headerExistsAfter) {
+                    console.log('%cMC Quick Order: SUCCESS! Headers have been reinitialized.', 'color: green; font-weight: bold;');
+                } else {
+                    console.error('%cMC Quick Order: FAILED! Headers still missing after fix.', 'color: red; font-weight: bold;');
                 }
-            });
+            }, 100);
+
+        } else {
+            console.error('MC Quick Order: WooCommerce Quick Order Plugin or options not available.');
         }
-        
-        // WooCommerce AJAX Add to Cart Buttons reinitialisieren
-        if (typeof wc_add_to_cart_params !== 'undefined') {
-            $('.add_to_cart_button').removeClass('added');
-            $('.add_to_cart_button').off('click.wc-add-to-cart');
-            
-            // WooCommerce Add to Cart Handler neu binden
-            $('.add_to_cart_button').on('click.wc-add-to-cart', function(e) {
-                e.preventDefault();
-                
-                var $button = $(this);
-                var product_id = $button.data('product_id');
-                var quantity = $button.data('quantity') || 1;
-                
-                if (!product_id) return;
-                
-                $button.addClass('loading');
-                
-                $.ajax({
-                    url: wc_add_to_cart_params.wc_ajax_url.toString().replace('%%endpoint%%', 'add_to_cart'),
-                    type: 'POST',
-                    data: {
-                        product_id: product_id,
-                        quantity: quantity
-                    },
-                    success: function(response) {
-                        if (response.error && response.product_url) {
-                            window.location = response.product_url;
-                            return;
-                        }
-                        
-                        // Trigger WooCommerce events
-                        $(document.body).trigger('added_to_cart', [response.fragments, response.cart_hash, $button]);
-                        
-                        $button.addClass('added');
-                    },
-                    complete: function() {
-                        $button.removeClass('loading');
-                    }
-                });
-            });
-        }
-        
-        // Quantity Input Handler reinitialisieren
-        $('.qty').off('change.mc-qty').on('change.mc-qty', function() {
-            var $input = $(this);
-            var $button = $input.closest('tr').find('.add_to_cart_button');
-            $button.data('quantity', $input.val());
-        });
         
         // Cart Totals Monitoring für neue Elemente reinitialisieren
         initCartTotalsMonitoring();
         
         console.log('MC Quick Order: Table reinitialization complete');
     }
+    
     
     // Cart Totals Live Update Functionality - Initialize after all functions are defined
     initCartTotalsMonitoring();
