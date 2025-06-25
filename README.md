@@ -1,4 +1,4 @@
-# Maison Common Quick Order Plugin v1.3.1
+# Maison Common Quick Order Plugin v1.4.0
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![WordPress](https://img.shields.io/badge/WordPress-5.0%2B-blue.svg)](https://wordpress.org/)
@@ -50,7 +50,33 @@ maison-common-quick-order/
 └── CHANGELOG.md
 ```
 
-## Neue Features in v1.3.1
+## Neue Features in v1.4.0
+
+### 🔄 AJAX Collections-Navigation
+- **Nahtlose Navigation:** Wechsel zwischen Collections ohne Seitenreload
+- **Loading-Animationen:** Visuelles Feedback während des Ladens
+- **Browser-History-Support:** URL-Updates und Back/Forward-Button-Kompatibilität
+- **Vollständige Reinitialisierung:** Quick Order Tabelle wird komplett neu geladen
+
+### 📱 Enhanced EAN-Scanner
+- **Toggle-Button:** Scanner-Aktivierung/Deaktivierung per Klick
+- **Live-Feedback:** Echtzeit-Status-Anzeige und visuelles Feedback
+- **Automatische Produkterkennung:** Sofortige EAN-Validierung und Produktsuche
+- **Nahtlose Integration:** Direkte Verbindung mit Sampling-Liste
+
+### 💰 Live-Preisberechnung
+- **Echtzeit-Updates:** EK/VK-Totals aktualisieren sich automatisch bei Warenkorb-Änderungen
+- **WooCommerce-Event-Monitoring:** Integration mit allen WooCommerce-Cart-Events
+- **Fragment-Updates:** Automatische Synchronisation ohne Seitenreload
+- **Erweiterte Kompatibilität:** Verbesserte Event-Überwachung für alle Themes
+
+### 🎯 Enhanced User Experience
+- **Verbesserte Benutzerführung:** Intuitive Bedienung mit visuellen Feedback-Systemen
+- **Mobile-Optimierung:** Touch-freundliche Bedienung auf allen Geräten
+- **Responsive Layouts:** Optimierte Darstellung für Desktop, Tablet und Mobile
+- **Performance-Optimierung:** Effiziente Update-Mechanismen und Event-Handler
+
+## Features aus v1.3.1
 
 ### Abmusterungs-System
 
@@ -246,14 +272,14 @@ Die Migration erfolgt automatisch. Alle bestehenden Funktionen bleiben unveränd
 
 ## Roadmap
 
-### Version 1.4.0 (geplant)
-
-- **Verkaufsbuch-Generierung** aus Quick Order Tabellen
-- **Erweiterte Unterschriften** mit Canvas-Integration
-- **Barcode-Generierung** für Collections
-- **Export-Funktionen** für LSE-Integration
-
 ### Version 1.5.0 (geplant)
+
+- **Erweiterte Analytics:** Tracking von Scanner-Nutzung und Collection-Navigation
+- **Performance-Optimierung:** Caching für häufig geladene Collections
+- **Mobile-App-Integration:** PWA-Features für bessere Mobile-Experience
+- **Erweiterte Barcode-Unterstützung:** QR-Codes und andere Barcode-Formate
+
+### Version 1.6.0 (geplant)
 
 - **Multi-Scanner-Support** für mehrere Geräte
 - **Offline-Modus** für iPad-Nutzung
