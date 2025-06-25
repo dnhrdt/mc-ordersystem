@@ -57,6 +57,10 @@ build/
 *.rar
 !releases/*.zip
 
+# Documentation and Marketing Materials
+collateral/
+uploaded/
+
 # OS generated files
 .DS_Store
 .DS_Store?
