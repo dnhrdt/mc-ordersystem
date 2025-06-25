@@ -1,12 +1,233 @@
 /**
- * Maison Common Sampling AJAX JavaScript
+ * Maison Cormont Sampling AJAX Handler
  * 
- * Handles EAN scanning, collection navigation, and sampling functionality
+ * Behandelt die AJAX-Funktionalität für das Sampling System
+ * Inkludiert EAN-Scanner Integration
  * 
- * @package MC_Quick_Order
+ * @version 1.1.0
  */
 
 jQuery(document).ready(function($) {
+    
+    // EAN Scanner Integration
+    let scannerActive = false;
+    let scanBuffer = '';
+    let scanTimeout = null;
+    
+    /**
+     * EAN Scanner Initialization
+     */
+    function initEANScanner() {
+        console.log('MC Sampling: Initializing EAN Scanner');
+        
+        // Keyboard event listener for scanner input
+        $(document).on('keypress', function(e) {
+            if (!scannerActive) return;
+            
+            // Clear previous timeout
+            if (scanTimeout) {
+                clearTimeout(scanTimeout);
+            }
+            
+            // Add character to buffer
+            if (e.which >= 32) { // Printable characters
+                scanBuffer += String.fromCharCode(e.which);
+            }
+            
+            // Set timeout to process scan (scanners typically input very fast)
+            scanTimeout = setTimeout(function() {
+                if (scanBuffer.length >= 8) { // Minimum EAN length
+                    processScanResult(scanBuffer.trim());
+                }
+                scanBuffer = '';
+            }, 100); // 100ms timeout
+            
+            // Prevent default if we're in scan mode
+            if (scanBuffer.length > 0) {
+                e.preventDefault();
+            }
+        });
+        
+        // Enter key handling for scanner
+        $(document).on('keydown', function(e) {
+            if (!scannerActive) return;
+            
+            if (e.which === 13 && scanBuffer.length > 0) { // Enter key
+                e.preventDefault();
+                if (scanTimeout) {
+                    clearTimeout(scanTimeout);
+                }
+                processScanResult(scanBuffer.trim());
+                scanBuffer = '';
+            }
+        });
+    }
+    
+    /**
+     * Process scanned EAN code
+     */
+    function processScanResult(eanCode) {
+        console.log('MC Sampling: EAN scanned:', eanCode);
+        
+        // Validate EAN format (basic check)
+        if (!/^\d{8,14}$/.test(eanCode)) {
+            showScanFeedback('Ungültiger EAN-Code: ' + eanCode, 'error');
+            return;
+        }
+        
+        // Show scanning feedback
+        showScanFeedback('EAN gescannt: ' + eanCode, 'success');
+        
+        // Search for product and add to sampling list
+        searchAndAddProduct(eanCode);
+    }
+    
+    /**
+     * Search for product by EAN and add to sampling
+     */
+    function searchAndAddProduct(eanCode) {
+        $.ajax({
+            url: mc_sampling_ajax.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'mc_search_product_by_ean',
+                ean_code: eanCode,
+                nonce: mc_sampling_ajax.nonce
+            },
+            success: function(response) {
+                if (response.success) {
+                    const product = response.data.product;
+                    
+                    // Add product to sampling list
+                    addProductToSampling(product);
+                    
+                    showScanFeedback(`Produkt hinzugefügt: ${product.name}`, 'success');
+                } else {
+                    showScanFeedback(`Produkt nicht gefunden: ${eanCode}`, 'error');
+                }
+            },
+            error: function() {
+                showScanFeedback('Fehler beim Suchen des Produkts', 'error');
+            }
+        });
+    }
+    
+    /**
+     * Add product to sampling list
+     */
+    function addProductToSampling(product) {
+        const samplingList = $('#mc-sampling-list tbody');
+        
+        // Check if product already exists
+        const existingRow = samplingList.find(`tr[data-product-id="${product.id}"]`);
+        if (existingRow.length > 0) {
+            // Update quantity
+            const qtyInput = existingRow.find('.sampling-quantity');
+            const currentQty = parseInt(qtyInput.val()) || 1;
+            qtyInput.val(currentQty + 1);
+            
+            // Highlight updated row
+            existingRow.addClass('updated-row');
+            setTimeout(() => existingRow.removeClass('updated-row'), 2000);
+            return;
+        }
+        
+        // Create new row
+        const newRow = $(`
+            <tr data-product-id="${product.id}" class="new-row">
+                <td>
+                    <img src="${product.image}" alt="${product.name}" style="width: 50px; height: 50px; object-fit: cover;">
+                </td>
+                <td>
+                    <strong>${product.name}</strong><br>
+                    <small>EAN: ${product.ean}</small>
+                </td>
+                <td>
+                    <input type="number" class="sampling-quantity" name="sampling_products[${product.id}][quantity]" 
+                           value="1" min="1" max="10" style="width: 60px;">
+                </td>
+                <td>
+                    <button type="button" class="button remove-sampling-item" data-product-id="${product.id}">
+                        Entfernen
+                    </button>
+                </td>
+            </tr>
+        `);
+        
+        samplingList.append(newRow);
+        
+        // Remove highlight after animation
+        setTimeout(() => newRow.removeClass('new-row'), 2000);
+        
+        // Update sampling count
+        updateSamplingCount();
+    }
+    
+    /**
+     * Show scan feedback to user
+     */
+    function showScanFeedback(message, type = 'info') {
+        // Remove existing feedback
+        $('.scan-feedback').remove();
+        
+        const feedbackClass = type === 'error' ? 'notice-error' : 'notice-success';
+        const feedback = $(`
+            <div class="scan-feedback notice ${feedbackClass} is-dismissible" style="margin: 10px 0;">
+                <p>${message}</p>
+            </div>
+        `);
+        
+        // Insert feedback at top of sampling form
+        $('#mc-sampling-form').prepend(feedback);
+        
+        // Auto-remove after 3 seconds
+        setTimeout(() => feedback.fadeOut(() => feedback.remove()), 3000);
+    }
+    
+    /**
+     * Toggle scanner mode
+     */
+    function toggleScanner() {
+        scannerActive = !scannerActive;
+        const button = $('#toggle-scanner');
+        
+        if (scannerActive) {
+            button.text('Scanner deaktivieren').addClass('scanner-active');
+            showScanFeedback('EAN-Scanner aktiviert - Scannen Sie jetzt Produkte', 'success');
+        } else {
+            button.text('EAN-Scanner aktivieren').removeClass('scanner-active');
+            showScanFeedback('EAN-Scanner deaktiviert', 'info');
+        }
+        
+        // Clear any pending scan
+        scanBuffer = '';
+        if (scanTimeout) {
+            clearTimeout(scanTimeout);
+        }
+    }
+    
+    /**
+     * Update sampling count display
+     */
+    function updateSamplingCount() {
+        const count = $('#mc-sampling-list tbody tr').length;
+        $('#sampling-count').text(count);
+    }
+    
+    // Initialize scanner on page load
+    initEANScanner();
+    
+    // Scanner toggle button handler
+    $(document).on('click', '#toggle-scanner', toggleScanner);
+    
+    // Remove sampling item handler
+    $(document).on('click', '.remove-sampling-item', function() {
+        const productId = $(this).data('product-id');
+        $(this).closest('tr').fadeOut(() => {
+            $(this).closest('tr').remove();
+            updateSamplingCount();
+        });
+    });
     'use strict';
     
     // EAN input handling

@@ -3,7 +3,7 @@
  * Plugin Name: Maison Common Quick Order
  * Plugin URI: https://maisoncommon.com
  * Description: AJAX-basierte Collections-Navigation mit Quick Order Tabellen und Abmusterungs-System für Maison Common
- * Version: 1.3.1
+ * Version: 1.4.0
  * Author: Michael Deinhardt
  * License: GPL v2 or later
  * Text Domain: maison-common-quick-order
@@ -18,7 +18,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('MC_QUICK_ORDER_VERSION', '1.3.1');
+define('MC_QUICK_ORDER_VERSION', '1.4.0');
 define('MC_QUICK_ORDER_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('MC_QUICK_ORDER_PLUGIN_PATH', plugin_dir_path(__FILE__));
 

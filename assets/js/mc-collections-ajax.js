@@ -52,6 +52,9 @@ jQuery(document).ready(function($) {
                     // Quick Order Inhalt aktualisieren
                     $('#mc-quick-order-content').html(response.data.quick_order_content);
                     
+                    // DataTables und andere JavaScript-Komponenten reinitialisieren
+                    reinitializeQuickOrderTable();
+                    
                     // URL aktualisieren (optional, für bessere UX)
                     if (history.pushState) {
                         var newUrl = window.location.protocol + "//" + window.location.host + 
@@ -109,6 +112,9 @@ jQuery(document).ready(function($) {
             success: function(response) {
                 if (response.success) {
                     $('#mc-quick-order-content').html(response.data.quick_order_content);
+                    
+                    // DataTables und andere JavaScript-Komponenten reinitialisieren
+                    reinitializeQuickOrderTable();
                     
                     if (updateUrl && history.pushState) {
                         var newUrl = window.location.protocol + "//" + window.location.host + 
@@ -237,6 +243,86 @@ jQuery(document).ready(function($) {
                 console.error('MC Quick Order: AJAX error updating cart totals', error);
             }
         });
+    }
+    
+    /**
+     * Reinitialisiert die Quick Order Tabelle nach AJAX-Reload
+     * Stellt sicher, dass DataTables und andere JS-Komponenten funktionieren
+     */
+    function reinitializeQuickOrderTable() {
+        console.log('MC Quick Order: Reinitializing Quick Order table components');
+        
+        // WooCommerce Quick Order DataTables reinitialisieren
+        if (typeof $.fn.DataTable !== 'undefined') {
+            // Bestehende DataTable-Instanz zerstören falls vorhanden
+            $('#woocommerce-quick-order-table').DataTable().destroy();
+            
+            // DataTable neu initialisieren mit den ursprünglichen Einstellungen
+            $('#woocommerce-quick-order-table').DataTable({
+                "paging": true,
+                "searching": true,
+                "ordering": true,
+                "info": true,
+                "responsive": true,
+                "language": {
+                    "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/German.json"
+                }
+            });
+        }
+        
+        // WooCommerce AJAX Add to Cart Buttons reinitialisieren
+        if (typeof wc_add_to_cart_params !== 'undefined') {
+            $('.add_to_cart_button').removeClass('added');
+            $('.add_to_cart_button').off('click.wc-add-to-cart');
+            
+            // WooCommerce Add to Cart Handler neu binden
+            $('.add_to_cart_button').on('click.wc-add-to-cart', function(e) {
+                e.preventDefault();
+                
+                var $button = $(this);
+                var product_id = $button.data('product_id');
+                var quantity = $button.data('quantity') || 1;
+                
+                if (!product_id) return;
+                
+                $button.addClass('loading');
+                
+                $.ajax({
+                    url: wc_add_to_cart_params.wc_ajax_url.toString().replace('%%endpoint%%', 'add_to_cart'),
+                    type: 'POST',
+                    data: {
+                        product_id: product_id,
+                        quantity: quantity
+                    },
+                    success: function(response) {
+                        if (response.error && response.product_url) {
+                            window.location = response.product_url;
+                            return;
+                        }
+                        
+                        // Trigger WooCommerce events
+                        $(document.body).trigger('added_to_cart', [response.fragments, response.cart_hash, $button]);
+                        
+                        $button.addClass('added');
+                    },
+                    complete: function() {
+                        $button.removeClass('loading');
+                    }
+                });
+            });
+        }
+        
+        // Quantity Input Handler reinitialisieren
+        $('.qty').off('change.mc-qty').on('change.mc-qty', function() {
+            var $input = $(this);
+            var $button = $input.closest('tr').find('.add_to_cart_button');
+            $button.data('quantity', $input.val());
+        });
+        
+        // Cart Totals Monitoring für neue Elemente reinitialisieren
+        initCartTotalsMonitoring();
+        
+        console.log('MC Quick Order: Table reinitialization complete');
     }
     
     // Cart Totals Live Update Functionality - Initialize after all functions are defined

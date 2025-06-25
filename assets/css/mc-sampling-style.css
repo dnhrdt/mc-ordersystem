@@ -393,3 +393,117 @@
         transition: none;
     }
 }
+
+/* Enhanced Scanner Styles */
+.scanner-active {
+    background: #28a745 !important;
+    border-color: #28a745 !important;
+}
+
+.scanner-active:hover {
+    background: #218838 !important;
+}
+
+#toggle-scanner {
+    margin-bottom: 15px;
+    padding: 10px 20px;
+    font-weight: bold;
+}
+
+/* Sampling List Styles */
+#mc-sampling-list {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+#mc-sampling-list th,
+#mc-sampling-list td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+#mc-sampling-list th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+    color: #333;
+}
+
+#mc-sampling-list .new-row {
+    background-color: #d4edda;
+    animation: highlightNew 2s ease-out;
+}
+
+#mc-sampling-list .updated-row {
+    background-color: #fff3cd;
+    animation: highlightUpdate 2s ease-out;
+}
+
+@keyframes highlightNew {
+    0% { background-color: #d4edda; }
+    100% { background-color: transparent; }
+}
+
+@keyframes highlightUpdate {
+    0% { background-color: #fff3cd; }
+    100% { background-color: transparent; }
+}
+
+.sampling-quantity {
+    width: 60px;
+    padding: 5px;
+    text-align: center;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+}
+
+.remove-sampling-item {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.remove-sampling-item:hover {
+    background: #c82333;
+}
+
+/* Scan Feedback Enhancements */
+.scan-feedback {
+    position: relative;
+    z-index: 1000;
+}
+
+.scan-feedback.notice-success {
+    border-left: 4px solid #28a745;
+}
+
+.scan-feedback.notice-error {
+    border-left: 4px solid #dc3545;
+}
+
+/* Sampling Count Display */
+#sampling-count {
+    font-weight: bold;
+    color: #E99EC5;
+    font-size: 1.2em;
+}
+
+/* Form Enhancements */
+#mc-sampling-form {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#mc-sampling-form h3 {
+    margin-top: 0;
+    color: #E99EC5;
+    border-bottom: 2px solid #E99EC5;
+    padding-bottom: 10px;
+}

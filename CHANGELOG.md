@@ -1,3 +1,30 @@
+## [1.4.0] - 2025-06-25
+
+### Hinzugefügt
+- **🔄 AJAX Collections-Navigation:** Nahtlose Navigation zwischen Collections ohne Seitenreload
+- **📱 EAN-Scanner Integration:** Erweiterte Scanner-Funktionalität mit Toggle-Modus und Live-Feedback
+- **💰 Live-Preisberechnung:** Echtzeit-Updates der EK/VK-Totals bei Warenkorb-Änderungen
+- **🎯 Enhanced User Experience:** Verbesserte Benutzerführung mit visuellen Feedback-Systemen
+
+### Verbessert
+- **Collections-Navigation:** AJAX-basierte Navigation mit Loading-Animationen und Browser-History-Support
+- **EAN-Scanner-Interface:** Toggle-Button für Scanner-Aktivierung, automatische Produkterkennung und Sampling-Liste-Integration
+- **Cart Totals:** Live-Updates ohne Seitenreload, erweiterte Event-Überwachung für WooCommerce-Kompatibilität
+- **JavaScript-Performance:** Optimierte Event-Handler und verbesserte Fehlerbehandlung
+
+### Technisch
+- **AJAX-Endpoints:** `mc_load_collection`, `mc_search_product_by_ean`, `mc_get_cart_totals`
+- **Enhanced Scanner:** Keyboard-Event-Handling, automatische EAN-Validierung, Produktsuche-Integration
+- **Live-Updates:** WooCommerce-Event-Monitoring, Fragment-Updates, automatische Totals-Aktualisierung
+- **Browser-Integration:** History API Support, URL-Updates, Back/Forward-Button-Kompatibilität
+- **Responsive Design:** Mobile-optimierte Scanner-Bedienung, Touch-freundliche Navigation
+
+### Behoben
+- **Collections-Reload:** Vollständige Reinitialisierung der Quick Order Tabelle nach AJAX-Navigation
+- **Scanner-Konflikte:** Saubere Event-Trennung zwischen Scanner-Modi und normaler Eingabe
+- **Cart-Synchronisation:** Zuverlässige Live-Updates der Preissummen bei allen Warenkorb-Änderungen
+- **Mobile-Kompatibilität:** Verbesserte Touch-Bedienung und responsive Layouts
+
 ## [1.3.1] - 2025-06-17
 
 ### Verbessert

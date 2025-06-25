@@ -40,6 +40,8 @@ class MC_Sampling_System {
         add_action('wp_ajax_nopriv_mc_scan_ean', array($this, 'ajax_scan_ean'));
         add_action('wp_ajax_mc_load_sampling_collection', array($this, 'ajax_load_sampling_collection'));
         add_action('wp_ajax_nopriv_mc_load_sampling_collection', array($this, 'ajax_load_sampling_collection'));
+        add_action('wp_ajax_mc_search_product_by_ean', array($this, 'ajax_search_product_by_ean'));
+        add_action('wp_ajax_nopriv_mc_search_product_by_ean', array($this, 'ajax_search_product_by_ean'));
         
         // Custom cart item handling
         add_filter('woocommerce_add_cart_item_data', array($this, 'add_sampling_cart_item_data'), 10, 3);
@@ -443,6 +445,45 @@ class MC_Sampling_System {
         wp_send_json_success(array(
             'content' => $content,
             'collection_id' => $collection_id
+        ));
+    }
+    
+    /**
+     * AJAX handler for searching product by EAN (for new scanner integration)
+     */
+    public function ajax_search_product_by_ean() {
+        // Verify nonce
+        if (!wp_verify_nonce($_POST['nonce'], 'mc_sampling_nonce')) {
+            wp_send_json_error('Security check failed');
+            return;
+        }
+        
+        $ean_code = sanitize_text_field($_POST['ean_code']);
+        
+        // Validate EAN format
+        if (!preg_match('/^\d{8,14}$/', $ean_code)) {
+            wp_send_json_error('Invalid EAN format');
+            return;
+        }
+        
+        // Find product by EAN
+        $product = $this->find_product_by_ean($ean_code);
+        
+        if (!$product) {
+            wp_send_json_error('Product not found');
+            return;
+        }
+        
+        // Get product data for frontend
+        $product_data = array(
+            'id' => $product->get_id(),
+            'name' => $product->get_name(),
+            'ean' => $ean_code,
+            'image' => wp_get_attachment_image_url($product->get_image_id(), 'thumbnail') ?: wc_placeholder_img_src('thumbnail')
+        );
+        
+        wp_send_json_success(array(
+            'product' => $product_data
         ));
     }
     
