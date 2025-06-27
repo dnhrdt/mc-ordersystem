@@ -71,7 +71,7 @@ maison-common-quick-order/
 
 ### ⚠️ Bekannte Optimierungsbedarfe
 - **Timing-Problem:** Sampling Frontend funktional aber langsam (5-6s Verzögerung)
-- **Polling-Mechanismus:** Wartet auf DataTables-Initialisierung (Daniel Barrenkamp Feedback ausstehend)
+- **Polling-Mechanismus:** Wartet auf DataTables-Initialisierung (DB Feedback ausstehend)
 - **Cart-Display:** Reset für gezielte v1.5.1 Optimierung durchgeführt
 
 ### 📋 Dokumentation & Vorbereitung

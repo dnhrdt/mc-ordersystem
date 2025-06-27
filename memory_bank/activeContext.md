@@ -76,10 +76,10 @@ Timestamp: 2025-06-27 14:01 CET
 - **Problem:** Größen-Auswahlfelder werden entfernt, aber viel zu spät (5-6 Sekunden Verzögerung)
 - **Ursache:** Polling-Mechanismus wartet auf DataTables-Initialisierung
 - **User-Feedback:** "Nicht praxistauglich" wegen Layout-Sprung und Verzögerung
-- **Status:** Gespräch mit Daniel Barrenkamp läuft für Performance-Optimierung
+- **Status:** Gespräch mit DB läuft für Performance-Optimierung
 - **Ziel:** Sofortige DOM-Manipulation ohne sichtbare Verzögerung
 
-#### **LÖSUNGSANSÄTZE (Daniel Barrenkamp Feedback ausstehend):**
+#### **LÖSUNGSANSÄTZE (DB Feedback ausstehend):**
 1. **DataTables createdRow Callback:** Manipulation während Zeilen-Erstellung
 2. **Plugin-Modifikation:** Direkter Eingriff in Quick Order Plugin
 3. **Alternative Rendering:** Eigene Tabellen-Implementierung für Sampling
@@ -184,7 +184,7 @@ $cart_item_key = WC()->cart->add_to_cart(
 4. **Sampling-System Überarbeitung:** 🔄 (FUNKTIONAL - TIMING-OPTIMIERUNG OFFEN)
    - DisableSingleVariations für Sampling-Tabelle aktivieren ✅ (funktional aber langsam)
    - Add to Cart Button: Parent-Produkt ohne Größe (wie Scanner) ✅
-   - WooCommerce Größenauswahl-Mechanismus umgehen ⚠️ (Daniel Barrenkamp Feedback ausstehend)
+   - WooCommerce Größenauswahl-Mechanismus umgehen ⚠️ (DB Feedback ausstehend)
 
 ### **Phase 3: Testing & Polish (2-3 Sessions)** ⏳
 5. **Intensive Tests:** Beide Systeme (Quick Order + Sampling) ausgiebig testen
