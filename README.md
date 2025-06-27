@@ -1,4 +1,4 @@
-# Maison Common Quick Order Plugin v1.4.0
+# Maison Common Quick Order Plugin v1.5.0-dev
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![WordPress](https://img.shields.io/badge/WordPress-5.0%2B-blue.svg)](https://wordpress.org/)
@@ -50,7 +50,36 @@ maison-common-quick-order/
 └── CHANGELOG.md
 ```
 
-## Neue Features in v1.4.0
+## Neue Features in v1.5.0-dev
+
+### 🔧 Header-Bug Fix
+- **AJAX-Reinitialisierung:** Such-/Filter-Header bleiben nach Collections-Wechsel erhalten
+- **Plugin-Reinitialisierung:** Vollständige Neu-Initialisierung durch `removeData('plugin_quickOrder')`
+- **Nahtlose Navigation:** Keine Header-Verluste mehr bei Collection-Navigation
+
+### 📱 EAN-Scanner Quick Order Integration
+- **SKU-basierte Filterung:** Parent-SKU-Extraktion mit Regex-Pattern (`/-1-(\d+)-0-\d+$/`)
+- **DataTables Custom Search:** Intelligente Filterung der Quick Order Tabelle
+- **Fallback-Mechanismus:** Automatische SKU-Extraktion wenn Parent keine SKU hat
+- **Filter-Reset:** "Filter zurücksetzen" Button für vollständige Tabellen-Anzeige
+
+### 🛒 Sampling System Backend
+- **WooCommerce-konforme Lösung:** Verwendet erste Variation für add_to_cart Validierung
+- **Custom Cart Data:** Sampling-spezifische Metadaten (`is_sampling`, `artikel_id`, `sampling_parent_id`)
+- **Event-Delegation:** MutationObserver + Event-Delegation für dynamische Button-Bindung
+- **Produktionsreifer Code:** Alle Debug-Ausgaben entfernt
+
+### ⚠️ Bekannte Optimierungsbedarfe
+- **Timing-Problem:** Sampling Frontend funktional aber langsam (5-6s Verzögerung)
+- **Polling-Mechanismus:** Wartet auf DataTables-Initialisierung (Daniel Barrenkamp Feedback ausstehend)
+- **Cart-Display:** Reset für gezielte v1.5.1 Optimierung durchgeführt
+
+### 📋 Dokumentation & Vorbereitung
+- **Memory Bank:** Vollständige Status-Updates und Dokumentation
+- **Cart-Cleanup-Funktionen:** Für v1.5.1 dokumentiert (`memory_bank/cart-cleanup-functions-v1.5.1.md`)
+- **Archivierung:** Obsolete Dateien in `archiv/` verschoben
+
+## Features aus v1.4.0
 
 ### 🔄 AJAX Collections-Navigation
 - **Nahtlose Navigation:** Wechsel zwischen Collections ohne Seitenreload

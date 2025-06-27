@@ -1,3 +1,40 @@
+## [1.5.0-dev] - 2025-06-27
+
+### Hinzugefügt
+- **🔧 Header-Bug Fix:** AJAX-Reinitialisierung der Such-/Filter-Header bei Kollektionswechsel
+- **📱 EAN-Scanner Quick Order:** Vollständige Integration mit SKU-basierter Filterung
+- **🛒 Sampling System Backend:** Funktionales Add-to-Cart mit variation_id Handling
+- **🧹 Code-Cleanup:** Produktionsreifer Code ohne Debug-Ausgaben
+
+### Verbessert
+- **Collections-Navigation:** Vollständige Plugin-Reinitialisierung durch `removeData('plugin_quickOrder')`
+- **EAN-Scanner Integration:** DataTables Custom Search Filter mit SKU-Pattern-Matching
+- **Sampling Add-to-Cart:** WooCommerce-konforme Lösung mit erster Variation für Validierung
+- **Memory Bank:** Vollständige Dokumentation und Status-Updates
+
+### Technisch
+- **SKU-Extraktion:** Regex-Pattern für Parent-SKU aus Varianten-SKU (`/-1-(\d+)-0-\d+$/`)
+- **AJAX-Endpoint:** `mc_get_parent_id_for_ean` mit Fallback-Mechanismus
+- **Cart Item Data:** Custom Sampling-Daten mit `is_sampling`, `artikel_id`, `sampling_parent_id`
+- **Event-Delegation:** MutationObserver + Event-Delegation für dynamische Button-Bindung
+- **Documentation:** Cart-Cleanup-Funktionen für v1.5.1 dokumentiert
+
+### Funktional aber optimierungsbedürftig
+- **⚠️ Sampling Frontend:** Funktional aber langsam (5-6s Verzögerung beim DOM-Update)
+- **⏳ Timing-Problem:** Polling-Mechanismus wartet auf DataTables-Initialisierung
+- **🔄 Daniel Barrenkamp Feedback:** Performance-Optimierung ausstehend
+
+### Behoben
+- **Header-Verschwinden:** Such-/Filter-Header bleiben nach Collections-Wechsel erhalten
+- **EAN-Scanner Timing:** Verzögerte Initialisierung bis DataTables-Filter verfügbar
+- **Sampling Backend:** WooCommerce add_to_cart Fehler durch variation_id Handling gelöst
+- **Code-Qualität:** Alle Debug-Ausgaben entfernt, produktionsreif
+
+### Nächste Schritte (v1.5.1)
+- **Cart-Display-Optimierung:** Intelligente Unterscheidung Order- vs. Sampling-Items
+- **Timing-Verbesserung:** DataTables createdRow Callback statt Polling-Mechanismus
+- **Mixed-Cart-Detection:** Warnung bei gemischten Warenkorb-Inhalten
+
 ## [1.4.0] - 2025-06-25
 
 ### Hinzugefügt
