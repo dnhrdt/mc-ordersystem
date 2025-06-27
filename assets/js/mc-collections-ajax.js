@@ -16,6 +16,152 @@ jQuery(document).ready(function($) {
         return;
     }
     
+    // Variable to hold the parent SKU for filtering
+    var filterParentSku = null;
+
+    // Custom DataTables filter function
+    $.fn.dataTable.ext.search.push(
+        function(settings, data, dataIndex) {
+            if (filterParentSku === null) {
+                return true; // No filter applied
+            }
+            
+            // Get the SKU from the table row (assuming it's in a specific column)
+            // We'll look for the SKU in the row data
+            var row = settings.aoData[dataIndex].nTr;
+            var skuCell = $(row).find('td').filter(function() {
+                // Look for cells that contain SKU-like patterns
+                var text = $(this).text().trim();
+                return text.match(/^\d+-\d+-\d+-/); // Matches your SKU pattern
+            }).first();
+            
+            if (skuCell.length === 0) {
+                console.log('Filtering Row:', dataIndex, 'No SKU found');
+                return false;
+            }
+            
+            var rowSku = skuCell.text().trim();
+            // Check if the variation SKU matches the parent SKU pattern
+            // Parent: 1-241-1299102-130, Variation: 1-241-1299102-1-130-0-34
+            // Extract the parent pattern from variation: remove "-1-" and "-0-XX" parts
+            // Pattern: 1-241-1299102-1-130-0-34 -> 1-241-1299102-130
+            var variationParentPattern = rowSku.replace(/-1-(\d+)-0-\d+$/, '-$1');
+            var isMatch = variationParentPattern === filterParentSku;
+            
+            // Debugging output
+            console.log('Filtering Row:', dataIndex, 'Row SKU:', rowSku, 'Extracted Parent:', variationParentPattern, 'Filter Parent SKU:', filterParentSku, 'Match:', isMatch);
+
+            return isMatch;
+        }
+    );
+
+    /**
+     * Create EAN Scanner Container with proper structure
+     */
+    function createEanScannerContainer() {
+        console.log('MC Quick Order: Creating EAN Scanner Container');
+        
+        // Remove any existing EAN scanner container
+        $('.mc-ean-scanner-container').remove();
+        
+        // Create the EAN scanner HTML structure
+        var scannerHtml = `
+            <div class="mc-ean-scanner-container">
+                <h3>EAN Scanner</h3>
+                <div class="mc-ean-input-group">
+                    <label for="mc-ean-scanner">EAN-Code scannen oder eingeben:</label>
+                    <input type="text" id="mc-ean-scanner" placeholder="EAN-Code (13 Zeichen)" maxlength="13" />
+                    <button type="button" id="mc-reset-filter">Filter zurücksetzen</button>
+                </div>
+            </div>
+        `;
+        
+        // Insert after the DataTables filter container
+        var filterContainer = $('.dataTables_filter');
+        if (filterContainer.length > 0) {
+            filterContainer.after(scannerHtml);
+            console.log('MC Quick Order: EAN Scanner Container created and inserted after filter');
+        } else {
+            console.error('MC Quick Order: DataTables filter container not found');
+        }
+    }
+
+    /**
+     * Initialize EAN Scanner Event Handlers
+     * This function is called both on initial load and after AJAX reinitialization
+     */
+    function initEanScannerEvents() {
+        console.log('MC Quick Order: Initializing EAN Scanner Events');
+        
+        // Remove any existing event handlers to prevent duplicates
+        $(document).off('input', '#mc-ean-scanner');
+        $(document).off('click', '#mc-reset-filter');
+        
+        // EAN Scanner Input Handler
+        $(document).on('input', '#mc-ean-scanner', function() {
+            console.log('MC Quick Order: EAN Scanner input detected');
+            var ean = $(this).val();
+            console.log('MC Quick Order: EAN value:', ean);
+            
+            if (ean.length >= 13) { // Standard EAN-13 length
+                console.log('MC Quick Order: EAN length sufficient, filtering...');
+                filterTableByEan(ean);
+            } else {
+                console.log('MC Quick Order: EAN too short, length:', ean.length);
+            }
+        });
+
+        // Reset Filter Button Handler
+        $(document).on('click', '#mc-reset-filter', function() {
+            console.log('MC Quick Order: Reset filter button clicked');
+            filterParentSku = null;
+            var table = $('#woocommerce-quick-order');
+            if (table.length > 0 && $.fn.DataTable.isDataTable(table)) {
+                table.DataTable().draw();
+                console.log('MC Quick Order: Filter reset, table redrawn');
+            }
+            $('#mc-ean-scanner').val('');
+        });
+        
+        console.log('MC Quick Order: EAN Scanner Events initialized');
+    }
+
+    /**
+     * Filter the Quick Order table by EAN using DataTables API.
+     * @param {string} ean - The EAN to search for.
+     */
+    function filterTableByEan(ean) {
+        $.ajax({
+            url: mc_ajax.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'mc_get_parent_id_for_ean',
+                ean: ean,
+                nonce: mc_ajax.nonce
+            },
+            success: function(response) {
+                if (response.success) {
+                    console.log('AJAX Success: Received parent_id:', response.data.parent_id);
+                    console.log('AJAX Success: Received parent_sku:', response.data.parent_sku);
+                    filterParentSku = response.data.parent_sku;
+                    // Redraw the table to apply the custom filter
+                    $('#woocommerce-quick-order').DataTable().draw();
+                } else {
+                    console.error('Error getting parent SKU for EAN:', response.data);
+                    alert('Product not found for the given EAN.');
+                    filterParentSku = null; // Reset filter if EAN is not found
+                    $('#woocommerce-quick-order').DataTable().draw();
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('AJAX error:', error);
+                alert('Connection error. Please try again.');
+                filterParentSku = null; // Reset filter on error
+                $('#woocommerce-quick-order').DataTable().draw();
+            }
+        });
+    }
+
     // Collection-Link Click Handler
     $(document).on('click', '.mc-collection-link', function(e) {
         e.preventDefault();
@@ -309,6 +455,13 @@ jQuery(document).ready(function($) {
                 console.log('MC Quick Order: Check after reinit - Header elements exist:', headerExistsAfter);
                 if (headerExistsAfter) {
                     console.log('%cMC Quick Order: SUCCESS! Headers have been reinitialized.', 'color: green; font-weight: bold;');
+                    
+                    // Create and inject EAN scanner with proper structure
+                    createEanScannerContainer();
+                    
+                    // *** CRITICAL: Re-initialize EAN Scanner Events after table reinit ***
+                    initEanScannerEvents();
+
                 } else {
                     console.error('%cMC Quick Order: FAILED! Headers still missing after fix.', 'color: red; font-weight: bold;');
                 }
@@ -324,6 +477,22 @@ jQuery(document).ready(function($) {
         console.log('MC Quick Order: Table reinitialization complete');
     }
     
+    
+    // Function to check for DataTables filter and initialize EAN scanner
+    function checkAndInitializeEanScanner() {
+        var filterContainer = $('.dataTables_filter');
+        if (filterContainer.length > 0) {
+            console.log('MC Quick Order: DataTables filter found, initializing EAN Scanner.');
+            createEanScannerContainer();
+            initEanScannerEvents();
+        } else {
+            console.log('MC Quick Order: DataTables filter not yet found, retrying in 50ms...');
+            setTimeout(checkAndInitializeEanScanner, 50); // Retry after 50ms
+        }
+    }
+
+    // Initial call to start checking for DataTables filter and initialize EAN scanner
+    checkAndInitializeEanScanner();
     
     // Cart Totals Live Update Functionality - Initialize after all functions are defined
     initCartTotalsMonitoring();

@@ -60,6 +60,7 @@ build/
 # Documentation and Marketing Materials
 collateral/
 uploaded/
+archive/
 
 # OS generated files
 .DS_Store

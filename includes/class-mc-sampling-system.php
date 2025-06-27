@@ -38,6 +38,8 @@ class MC_Sampling_System {
         // Register AJAX handlers for sampling
         add_action('wp_ajax_mc_scan_ean', array($this, 'ajax_scan_ean'));
         add_action('wp_ajax_nopriv_mc_scan_ean', array($this, 'ajax_scan_ean'));
+        add_action('wp_ajax_mc_add_sampling_from_table', array($this, 'ajax_add_sampling_from_table'));
+        add_action('wp_ajax_nopriv_mc_add_sampling_from_table', array($this, 'ajax_add_sampling_from_table'));
         add_action('wp_ajax_mc_load_sampling_collection', array($this, 'ajax_load_sampling_collection'));
         add_action('wp_ajax_nopriv_mc_load_sampling_collection', array($this, 'ajax_load_sampling_collection'));
         add_action('wp_ajax_mc_search_product_by_ean', array($this, 'ajax_search_product_by_ean'));
@@ -61,6 +63,9 @@ class MC_Sampling_System {
         add_action('collection_edit_form_fields', array($this, 'edit_sampling_collection_field'));
         add_action('edited_collection', array($this, 'save_sampling_collection_field'));
         add_action('create_collection', array($this, 'save_sampling_collection_field'));
+
+        // Filter to aggregate variation EANs for parent products in the sampling table
+        // add_filter('woocommerce_quick_order_custom_data_html', array($this, 'aggregate_variation_eans'), 10, 3);
     }
     
     /**
@@ -224,10 +229,10 @@ class MC_Sampling_System {
         if (empty($collections)) {
             // No sampling collections found
             echo '<div class="woocommerce-error">';
-            echo '<h3>' . __('⚠️ Keine Abmusterungs-Collection gefunden!', 'maison-common-quick-order') . '</h3>';
+            echo '<h3>' . __('  Keine Abmusterungs-Collection gefunden!', 'maison-common-quick-order') . '</h3>';
             echo '<p>' . __('Bitte markieren Sie eine Collection als "Abmusterungs-Collection" im WordPress-Backend:', 'maison-common-quick-order') . '</p>';
             echo '<ol>';
-            echo '<li>' . __('Gehen Sie zu <strong>Produkte → Collections</strong>', 'maison-common-quick-order') . '</li>';
+            echo '<li>' . __('Gehen Sie zu <strong>Produkte   Collections</strong>', 'maison-common-quick-order') . '</li>';
             echo '<li>' . __('Wählen Sie eine Collection aus und klicken Sie auf <strong>Bearbeiten</strong>', 'maison-common-quick-order') . '</li>';
             echo '<li>' . __('Aktivieren Sie die Checkbox <strong>"Abmusterungs-Collection"</strong>', 'maison-common-quick-order') . '</li>';
             echo '<li>' . __('Klicken Sie auf <strong>Speichern</strong>', 'maison-common-quick-order') . '</li>';
@@ -236,7 +241,7 @@ class MC_Sampling_System {
         } elseif (count($collections) > 1) {
             // Multiple sampling collections found
             echo '<div class="woocommerce-info">';
-            echo '<h3>' . __('⚠️ Mehrere Abmusterungs-Collections gefunden!', 'maison-common-quick-order') . '</h3>';
+            echo '<h3>' . __('  Mehrere Abmusterungs-Collections gefunden!', 'maison-common-quick-order') . '</h3>';
             echo '<p>' . sprintf(__('Es sind %d Collections als Abmusterung markiert. Wir verwenden automatisch die neueste Collection.', 'maison-common-quick-order'), count($collections)) . '</p>';
             echo '<p>' . __('<strong>Tipp:</strong> Entfernen Sie die Markierung bei älteren Collections im Backend für eine saubere Konfiguration.', 'maison-common-quick-order') . '</p>';
             
@@ -283,18 +288,17 @@ class MC_Sampling_System {
      * Render Quick Order table for sampling collection
      */
     private function render_quick_order_table($collection_id) {
-        // Create the Quick Order shortcode for this collection
+        // Execute the shortcode for the Quick Order table
         $shortcode = sprintf(
             '[woocommerce_quick_order_table taxonomy="collection" categories="%d" order="DESC" orderby="menu_order" only_on_stock="no"]',
             $collection_id
         );
-        
-        // Execute the shortcode and display the table
+
         echo '<div class="mc-sampling-quick-order-table">';
         echo do_shortcode($shortcode);
         echo '</div>';
-        
-        // Add note about sampling items
+
+        // Add a note about sampling items
         echo '<div class="mc-sampling-note woocommerce-info">';
         echo '<p><strong>' . __('Hinweis:', 'maison-common-quick-order') . '</strong> ';
         echo __('Alle über diese Tabelle hinzugefügten Produkte werden automatisch als Abmusterungs-Items (0€) behandelt.', 'maison-common-quick-order');
@@ -306,76 +310,142 @@ class MC_Sampling_System {
      * AJAX handler for EAN scanning
      */
     public function ajax_scan_ean() {
-        // Debug logging
-        error_log('MC Sampling: ajax_scan_ean called');
-        error_log('MC Sampling: POST data: ' . print_r($_POST, true));
-        
-        // Verify nonce
+        // Verify nonce and get EAN
         if (!wp_verify_nonce($_POST['nonce'], 'mc_sampling_nonce')) {
-            error_log('MC Sampling: Nonce verification failed');
             wp_send_json_error('Security check failed');
-            return;
         }
-        
         $ean = sanitize_text_field($_POST['ean']);
-        error_log('MC Sampling: Processing EAN: ' . $ean);
-        
-        // Validate EAN format (13 digits)
-        if (!preg_match('/^\d{13}$/', $ean)) {
-            wp_send_json_error(__('Ungültige EAN. Bitte 13 Ziffern eingeben.', 'maison-common-quick-order'));
-            return;
-        }
-        
+
         // Find product variant by EAN
         $variant = $this->find_product_by_ean($ean);
-        
         if (!$variant) {
             wp_send_json_error(__('Produkt mit dieser EAN nicht gefunden.', 'maison-common-quick-order'));
-            return;
         }
-        
+
         // Get parent product
         $parent_product = wc_get_product($variant->get_parent_id());
-        
         if (!$parent_product) {
             wp_send_json_error(__('Parent-Produkt nicht gefunden.', 'maison-common-quick-order'));
-            return;
         }
-        
-        // Get parent SKU (Artikel-ID)
+
+        // Add to cart using the refactored helper function
+        $result = $this->add_sampling_item_to_cart($parent_product, $ean, $variant->get_id());
+
+        if ($result['success']) {
+            wp_send_json_success($result['data']);
+        } else {
+            wp_send_json_error($result['data']);
+        }
+    }
+
+    /**
+     * AJAX handler for adding a sampling item from the quick order table button.
+     */
+    public function ajax_add_sampling_from_table() {
+        // Verify nonce and get product ID
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'mc_sampling_nonce')) {
+            wp_send_json_error('Security check failed');
+        }
+
+        if (!isset($_POST['product_id'])) {
+            wp_send_json_error('Product ID missing.');
+        }
+
+        $product_id = intval($_POST['product_id']);
+
+        // Get parent product
+        $parent_product = wc_get_product($product_id);
+        if (!$parent_product) {
+            wp_send_json_error(__('Produkt nicht gefunden.', 'maison-common-quick-order'));
+        }
+
+        if (!$parent_product->is_type('variable')) {
+             wp_send_json_error(__('Produkt ist kein variables Produkt.', 'maison-common-quick-order'));
+        }
+
+        // Add to cart using the refactored helper function
+        $result = $this->add_sampling_item_to_cart($parent_product);
+
+        if ($result['success']) {
+            wp_send_json_success($result['data']);
+        } else {
+            wp_send_json_error($result['data']);
+        }
+    }
+
+    /**
+     * Refactored helper function to add a parent product to the cart as a sampling item.
+     *
+     * @param WC_Product $parent_product The parent product object.
+     * @param string|null $ean The scanned EAN (optional).
+     * @param int|null $variant_id The original variant ID (optional).
+     * @return array An array indicating success status and data/message.
+     */
+    private function add_sampling_item_to_cart($parent_product, $ean = null, $variant_id = null) {
         $artikel_id = $parent_product->get_sku();
-        
         if (empty($artikel_id)) {
-            wp_send_json_error(__('Artikel-ID (SKU) nicht gefunden.', 'maison-common-quick-order'));
-            return;
+            // Fallback to extract SKU from a variation if parent has no SKU
+            $children = $parent_product->get_children();
+            if (!empty($children)) {
+                $child_product = wc_get_product($children[0]);
+                $artikel_id = $child_product->get_sku();
+            }
+        }
+
+        if (empty($artikel_id)) {
+            return array('success' => false, 'data' => __('Artikel-ID (SKU) nicht gefunden.', 'maison-common-quick-order'));
+        }
+
+        // Get first available variation for WooCommerce validation
+        $children = $parent_product->get_children();
+        if (empty($children)) {
+            return array('success' => false, 'data' => __('Keine Varianten gefunden.', 'maison-common-quick-order'));
         }
         
-        // Add to cart as sampling item
+        $first_variation_id = $children[0];
+        $first_variation = wc_get_product($first_variation_id);
+        
+        if (!$first_variation) {
+            return array('success' => false, 'data' => __('Erste Variation konnte nicht geladen werden.', 'maison-common-quick-order'));
+        }
+
+        // Prepare custom cart item data
         $cart_item_data = array(
             'is_sampling' => true,
             'artikel_id' => $artikel_id,
-            'scanned_ean' => $ean,
-            'original_variant_id' => $variant->get_id(),
-            'sampling_size' => 'Abmusterung'
+            'sampling_size' => 'Abmusterung',
+            'sampling_parent_id' => $parent_product->get_id(),
+            'sampling_parent_name' => $parent_product->get_name()
         );
-        
+
+        if ($ean) {
+            $cart_item_data['scanned_ean'] = $ean;
+        }
+        if ($variant_id) {
+            $cart_item_data['original_variant_id'] = $variant_id;
+        }
+
+        // Add using the first variation ID but with custom cart data that shows it's a parent sampling
         $cart_item_key = WC()->cart->add_to_cart(
             $parent_product->get_id(),
             1, // quantity
-            0, // variation_id (we use parent product)
-            array(), // variation attributes
+            $first_variation_id, // Use first variation ID for WooCommerce validation
+            $first_variation->get_variation_attributes(), // Include variation attributes
             $cart_item_data
         );
-        
+
         if ($cart_item_key) {
-            wp_send_json_success(array(
-                'message' => sprintf(__('Produkt "%s" zur Abmusterung hinzugefügt', 'maison-common-quick-order'), $parent_product->get_name()),
-                'product_name' => $parent_product->get_name(),
-                'artikel_id' => $artikel_id,
-                'cart_item_key' => $cart_item_key
-            ));
+            return array(
+                'success' => true,
+                'data' => array(
+                    'message' => sprintf(__('Produkt "%s" zur Abmusterung hinzugefügt', 'maison-common-quick-order'), $parent_product->get_name()),
+                    'product_name' => $parent_product->get_name(),
+                    'artikel_id' => $artikel_id,
+                    'cart_item_key' => $cart_item_key
+                )
+            );
         } else {
-            wp_send_json_error(__('Fehler beim Hinzufügen zum Warenkorb.', 'maison-common-quick-order'));
+            return array('success' => false, 'data' => __('Fehler beim Hinzufügen zum Warenkorb.', 'maison-common-quick-order'));
         }
     }
     
@@ -421,9 +491,6 @@ class MC_Sampling_System {
      * AJAX handler for loading sampling collection
      */
     public function ajax_load_sampling_collection() {
-        // Debug logging
-        error_log('MC Sampling: ajax_load_sampling_collection called');
-        
         // Verify nonce
         if (!wp_verify_nonce($_POST['nonce'], 'mc_sampling_nonce')) {
             wp_send_json_error('Security check failed');
@@ -503,8 +570,6 @@ class MC_Sampling_System {
                 $cart_item_data['artikel_id'] = $artikel_id;
                 $cart_item_data['sampling_size'] = 'Abmusterung';
                 $cart_item_data['added_via'] = 'quick_order_table';
-                
-                error_log('MC Sampling: Product added via Quick Order table as sampling item - SKU: ' . $artikel_id);
             }
         }
         
@@ -540,7 +605,7 @@ class MC_Sampling_System {
         // This runs after the item is added to cart
         // We can use this to modify the cart item if needed
         if (isset($cart_item_data['is_sampling']) && $cart_item_data['is_sampling']) {
-            error_log('MC Sampling: Sampling item added to cart - Key: ' . $cart_item_key);
+            // Sampling item successfully added to cart
         }
     }
     
@@ -549,22 +614,11 @@ class MC_Sampling_System {
      */
     public function display_sampling_cart_item_data($item_data, $cart_item) {
         if (isset($cart_item['is_sampling']) && $cart_item['is_sampling']) {
-            $item_data[] = array(
-                'key' => __('Typ', 'maison-common-quick-order'),
-                'value' => __('Abmusterung', 'maison-common-quick-order')
-            );
-            
+            // Only show Artikel-ID for sampling items as requested by user
             if (isset($cart_item['artikel_id'])) {
                 $item_data[] = array(
                     'key' => __('Artikel-ID', 'maison-common-quick-order'),
                     'value' => $cart_item['artikel_id']
-                );
-            }
-            
-            if (isset($cart_item['sampling_size'])) {
-                $item_data[] = array(
-                    'key' => __('Größe', 'maison-common-quick-order'),
-                    'value' => $cart_item['sampling_size']
                 );
             }
         }
@@ -660,6 +714,7 @@ class MC_Sampling_System {
         
         return false;
     }
+    
     
     /**
      * Add sampling collection field

@@ -309,3 +309,163 @@
         font-size: 12px;
     }
 }
+
+/* EAN Scanner Container - Standalone Design */
+.mc-ean-scanner-container {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    width: 100%;
+}
+
+.mc-ean-scanner-container h3 {
+    margin: 0 0 15px 0;
+    color: #E99EC5;
+    font-size: 1.2em;
+    border-bottom: 2px solid #E99EC5;
+    padding-bottom: 8px;
+    font-weight: normal;
+}
+
+.mc-ean-input-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.mc-ean-input-group label {
+    flex: 1 1 100%;
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #333;
+    font-size: 14px;
+}
+
+#mc-ean-scanner {
+    flex: 1 1 300px;
+    padding: 12px;
+    font-size: 16px;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 1px;
+    transition: border-color 0.3s ease;
+    background: white;
+}
+
+#mc-ean-scanner:focus {
+    border-color: #E99EC5;
+    outline: none;
+    box-shadow: 0 0 5px rgba(233, 158, 197, 0.3);
+}
+
+#mc-reset-filter {
+    flex: 0 0 auto;
+    padding: 12px 24px;
+    background: #E99EC5;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    font-weight: 500;
+}
+
+#mc-reset-filter:hover {
+    background: #a46497;
+}
+
+/* DataTables Wrapper für Flexbox-Layout */
+.dataTables_wrapper {
+    display: flex;
+    flex-wrap: wrap; /* Erlaubt Umbruch auf kleineren Bildschirmen */
+    align-items: center; /* Vertikale Ausrichtung */
+    gap: 20px; /* Abstand zwischen den Elementen */
+    margin-bottom: 20px; /* Abstand zum Inhalt darunter */
+}
+
+/* DataTables Length, Filter und EAN Scanner nebeneinander */
+.dataTables_wrapper .dataTables_length {
+    flex: 0 0 200px; /* Feste Breite von 200px */
+    margin-bottom: 0; /* Entferne den unteren Rand */
+}
+
+.dataTables_wrapper .dataTables_filter {
+    flex: 1; /* Nimmt den verbleibenden Platz ein */
+    min-width: 200px; /* Mindestbreite, um Lesbarkeit zu gewährleisten */
+    margin-bottom: 0; /* Entferne den unteren Rand */
+    float: left;
+    text-align: left;
+    padding-top: 10px;
+}
+
+.dataTables_wrapper .dataTables_filter input {
+  width: calc(100% - 200px);
+}
+
+
+.dataTables_wrapper .mc-ean-scanner-container {
+    flex: 1; /* Nimmt den verfügbaren Platz ein */
+    min-width: 50%; /* Mindestbreite für den Scanner */
+    margin-bottom: 0; /* Entferne den unteren Rand */
+    padding: 15px; /* Etwas weniger Padding, um Platz zu sparen */
+}
+
+.dataTables_wrapper .mc-ean-scanner-container h3 {
+    margin-top: 0; /* Entferne oberen Rand */
+}
+
+/* Responsive Design für EAN Scanner und DataTables Elemente */
+@media (max-width: 1024px) {
+    .dataTables_wrapper {
+        flex-direction: column; /* Elemente untereinander auf kleineren Bildschirmen */
+        align-items: flex-start; /* Links ausrichten */
+        gap: 15px; /* Angepasster Abstand */
+    }
+
+    .dataTables_wrapper .dataTables_length,
+    .dataTables_wrapper .dataTables_filter,
+    .dataTables_wrapper .mc-ean-scanner-container {
+        width: 100%; /* Volle Breite */
+        flex: none; /* Keine Flex-Anpassung */
+        margin-bottom: 0; /* Kein zusätzlicher Rand */
+    }
+}
+
+@media (max-width: 768px) {
+    .mc-ean-scanner-container {
+        padding: 15px;
+    }
+    
+    .mc-ean-scanner-container h3 {
+        font-size: 1.1em;
+        margin-bottom: 12px;
+    }
+    
+    .mc-ean-input-group {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    #mc-ean-scanner,
+    #mc-reset-filter {
+        width: 100%;
+        font-size: 14px;
+    }
+    
+    #mc-reset-filter {
+        padding: 10px 20px;
+    }
+}
+
+/* Verstecke die EAN-Spalte, aber lasse sie für die Suche verfügbar */
+.quick-order-table-value-meta-_alg_ean {
+    display: none;
+}
+.woocommerce-quick-order-table th.meta-_alg_ean {
+    display: none;
+}

@@ -43,11 +43,26 @@ class MC_Order_System {
         add_action('wp_ajax_nopriv_mc_search_customers', array($this, 'ajax_search_customers'));
         add_action('wp_ajax_mc_get_cart_totals', array($this, 'ajax_get_cart_totals'));
         add_action('wp_ajax_nopriv_mc_get_cart_totals', array($this, 'ajax_get_cart_totals'));
+        add_action('wp_ajax_mc_get_parent_id_for_ean', array($this, 'ajax_get_parent_id_for_ean'));
+        add_action('wp_ajax_nopriv_mc_get_parent_id_for_ean', array($this, 'ajax_get_parent_id_for_ean'));
         
+        // Add parent ID to table rows
+        add_filter('woocommerce_quick_order_table_row_attributes', array($this, 'add_parent_id_to_row_attributes'), 10, 2);
+
         // Only load on frontend
         if (!is_admin()) {
             add_action('template_redirect', array($this, 'init_quick_order_system'), 30);
         }
+    }
+
+    /**
+     * Add data-parent-id attribute to quick order table rows using a filter.
+     */
+    public function add_parent_id_to_row_attributes($attributes, $product) {
+        if ($product && $product->is_type('variation')) {
+            $attributes['data-parent-id'] = $product->get_parent_id();
+        }
+        return $attributes;
     }
     
     /**
@@ -163,7 +178,6 @@ class MC_Order_System {
             echo '<p>' . __('Lade Collection...', 'maison-common-quick-order') . '</p>';
         echo '</div>';
         
-        // Quick order container
         echo '<div id="mc-quick-order-content">';
         
         if ($current_collection_id > 0) {
@@ -214,39 +228,92 @@ class MC_Order_System {
         // Generate quick order table
         $quick_order_content = do_shortcode('[woocommerce_quick_order_table taxonomy="collection" categories="' . $collection_id . '" order="DESC" orderby="menu_order" only_on_stock="no"]');
         
-        // DEBUG: Log the generated content
-        error_log('MC Quick Order: Generated content length: ' . strlen($quick_order_content));
-        error_log('MC Quick Order: Generated content preview: ' . substr($quick_order_content, 0, 500));
-        
-        // Check if content contains a table
-        $has_table = strpos($quick_order_content, '<table') !== false;
-        $has_woocommerce_table = strpos($quick_order_content, 'woocommerce-quick-order-table') !== false;
-        error_log('MC Quick Order: Content has table: ' . ($has_table ? 'YES' : 'NO'));
-        error_log('MC Quick Order: Content has woocommerce-quick-order-table: ' . ($has_woocommerce_table ? 'YES' : 'NO'));
-        
-        // Check if collection has products
-        $products = get_posts(array(
-            'post_type' => 'product',
-            'posts_per_page' => -1,
-            'tax_query' => array(
-                array(
-                    'taxonomy' => 'collection',
-                    'field' => 'term_id',
-                    'terms' => $collection_id
-                )
-            )
-        ));
-        error_log('MC Quick Order: Collection ' . $collection_id . ' has ' . count($products) . ' products');
-        
         // Add cart totals below the table
         $quick_order_content .= '<div class="mc-cart-totals-below-table">';
         $quick_order_content .= do_shortcode('[mc_cart_totals]');
         $quick_order_content .= '</div>';
         
+        error_log('MC Quick Order: Generated content length: ' . strlen($quick_order_content));
+        
         wp_send_json_success(array(
             'collection_name' => $collection->name,
             'collection_id' => $collection_id,
             'quick_order_content' => $quick_order_content
+        ));
+    }
+    
+    /**
+     * AJAX handler for getting parent product SKU for a given EAN.
+     */
+    public function ajax_get_parent_id_for_ean() {
+        // Verify nonce
+        if (!wp_verify_nonce($_POST['nonce'], 'mc_collections_nonce')) {
+            wp_send_json_error('Security check failed');
+            return;
+        }
+        
+        $ean = sanitize_text_field($_POST['ean']);
+        
+        if (empty($ean)) {
+            wp_send_json_error('EAN is missing');
+            return;
+        }
+        
+        // Query for the product variation by EAN
+        $args = array(
+            'post_type' => 'product_variation',
+            'post_status' => 'publish',
+            'posts_per_page' => 1,
+            'meta_query' => array(
+                array(
+                    'key' => '_alg_ean',
+                    'value' => $ean,
+                    'compare' => '='
+                )
+            )
+        );
+        
+        $variations = get_posts($args);
+        
+        if (empty($variations)) {
+            wp_send_json_error('Product not found for the given EAN');
+            return;
+        }
+        
+        // Get the parent product ID and SKU
+        $parent_id = $variations[0]->post_parent;
+        $parent_product = wc_get_product($parent_id);
+        
+        if (!$parent_product) {
+            wp_send_json_error('Parent product not found');
+            return;
+        }
+        
+        $parent_sku = $parent_product->get_sku();
+        
+        // If parent has no SKU, extract it from the variation SKU
+        if (empty($parent_sku)) {
+            $variation_product = wc_get_product($variations[0]->ID);
+            $variation_sku = $variation_product->get_sku();
+            
+            if (!empty($variation_sku)) {
+                // Extract parent SKU from variation SKU
+                // Pattern: 1-241-1533604-1-490-0-34 -> 1-241-1533604-490
+                if (preg_match('/^(\d+-\d+-\d+)-\d+-(\d+)-\d+-\d+$/', $variation_sku, $matches)) {
+                    $parent_sku = $matches[1] . '-' . $matches[2];
+                } else {
+                    wp_send_json_error('Could not extract parent SKU from variation SKU: ' . $variation_sku);
+                    return;
+                }
+            } else {
+                wp_send_json_error('Neither parent nor variation has SKU');
+                return;
+            }
+        }
+        
+        wp_send_json_success(array(
+            'parent_id' => $parent_id,
+            'parent_sku' => $parent_sku
         ));
     }
     

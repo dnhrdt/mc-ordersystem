@@ -295,6 +295,7 @@ jQuery(document).ready(function($) {
                 if (response.success) {
                     showScanFeedback('success', response.data.message);
                     addToScanHistory(response.data);
+                    // highlightScannedProductInTable(ean); // Highlight feature removed as per new requirements
                     $input.val('').focus(); // Clear input and refocus
                 } else {
                     showScanFeedback('error', response.data || mc_sampling_ajax.strings.scan_error);
@@ -421,4 +422,150 @@ jQuery(document).ready(function($) {
             $('#mc-scan-feedback').hide();
         }
     });
+
+    /**
+     * Robust DataTables integration using MutationObserver and proper event delegation
+     */
+    function initializeTableButtonHandler() {
+        console.log('MC DEBUG: Initializing robust table button handler');
+        
+        // Use MutationObserver to detect when the table is added/modified
+        var observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'childList') {
+                    var samplingTable = document.querySelector('.mc-sampling-quick-order-table table.woocommerce-quick-order');
+                    if (samplingTable && $.fn.DataTable.isDataTable(samplingTable)) {
+                        console.log('MC DEBUG: Sampling table detected, processing rows...');
+                        processTableRows();
+                        // Stop observing once we've processed the table
+                        observer.disconnect();
+                    }
+                }
+            });
+        });
+        
+        // Start observing
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+        
+        // Also try immediately in case table is already there
+        setTimeout(function() {
+            var samplingTable = document.querySelector('.mc-sampling-quick-order-table table.woocommerce-quick-order');
+            if (samplingTable && $.fn.DataTable.isDataTable(samplingTable)) {
+                console.log('MC DEBUG: Table already present, processing immediately');
+                processTableRows();
+                observer.disconnect();
+            }
+        }, 100);
+    }
+    
+    /**
+     * Process table rows and replace dropdowns with simple buttons
+     */
+    function processTableRows() {
+        var $table = $('.mc-sampling-quick-order-table table.woocommerce-quick-order');
+        if (!$table.length) return;
+        
+        console.log('MC DEBUG: Processing table rows for sampling buttons');
+        
+        $table.find('tbody tr').each(function() {
+            var $row = $(this);
+            var cartCell = $row.find('.quick-order-table-value-ca');
+            var variableForm = cartCell.find('.woocommerce-quick-order-variable-add-to-cart');
+            
+            // Skip if already processed or not a variable product row
+            if (cartCell.find('.mc-add-sampling-button').length > 0 || variableForm.length === 0) {
+                return;
+            }
+            
+            // Extract product ID from row ID
+            var productId = $row.attr('id');
+            if (productId) {
+                productId = productId.replace('quick-order-table-row-', '');
+            }
+            
+            if (!productId) {
+                console.warn('MC DEBUG: Could not extract product ID from row');
+                return;
+            }
+            
+            console.log('MC DEBUG: Converting row for product ID:', productId);
+            
+            // Create our simple button
+            var newButton = '<button type="button" class="button mc-add-sampling-button" data-product-id="' + productId + '">Hinzufügen</button>';
+            
+            // Replace the dropdown form with our button
+            cartCell.html(newButton);
+        });
+        
+        console.log('MC DEBUG: Table row processing complete');
+    }
+    
+    // Set up delegated event handler for sampling buttons (this runs once)
+    $(document).on('click', '.mc-add-sampling-button', function(e) {
+        e.preventDefault();
+        var $button = $(this);
+        var productId = $button.data('product-id');
+        
+        console.log('MC DEBUG: Sampling button clicked for product:', productId);
+        
+        if (!productId) {
+            console.error('MC Sampling: Could not find product ID for button');
+            alert('Fehler: Produkt-ID nicht gefunden');
+            return;
+        }
+        
+        // Update button state
+        $button.prop('disabled', true).addClass('loading').text('Wird hinzugefügt...');
+        
+        $.ajax({
+            url: mc_sampling_ajax.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'mc_add_sampling_from_table',
+                product_id: productId,
+                nonce: mc_sampling_ajax.nonce
+            },
+            success: function(response) {
+                console.log('MC DEBUG: AJAX response:', response);
+                
+                if (response.success) {
+                    $button.text('✓ Hinzugefügt').addClass('added').removeClass('loading');
+                    
+                    // Trigger WooCommerce cart update
+                    $(document.body).trigger('added_to_cart');
+                    
+                    // Reset button after 3 seconds
+                    setTimeout(function() {
+                        $button.prop('disabled', false).removeClass('added').text('Hinzufügen');
+                    }, 3000);
+                    
+                } else {
+                    console.error('MC DEBUG: Server returned error:', response.data);
+                    $button.text('Fehler').removeClass('loading');
+                    alert('Fehler: ' + (response.data || 'Unbekannter Fehler'));
+                    
+                    // Reset button after 2 seconds
+                    setTimeout(function() {
+                        $button.prop('disabled', false).text('Hinzufügen');
+                    }, 2000);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('MC DEBUG: AJAX error:', status, error);
+                $button.text('Verbindungsfehler').removeClass('loading');
+                alert('Verbindungsfehler. Bitte versuchen Sie es erneut.');
+                
+                // Reset button after 2 seconds
+                setTimeout(function() {
+                    $button.prop('disabled', false).text('Hinzufügen');
+                }, 2000);
+            }
+        });
+    });
+    
+    // Initialize the table handler
+    initializeTableButtonHandler();
 });

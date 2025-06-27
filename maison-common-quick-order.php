@@ -301,5 +301,37 @@ class MC_Quick_Order {
     }
 }
 
+/**
+ * Helper function to output debug messages to the browser console.
+ *
+ * @param mixed $message The message or data to log.
+ */
+function mc_debug_to_console($message) {
+    $message = json_encode($message);
+    echo "<script>console.log('MC DEBUG: " . $message . "');</script>";
+}
+
+/**
+ * Conditionally disable single variations for the Quick Order table in sampling context.
+ * This function hooks into 'wp' to ensure the global $post object is available.
+ */
+function mc_sampling_context_override_options() {
+    global $post, $woocommerce_quick_order_options;
+
+    // We need to check if we are in the frontend and the $post object is valid
+    if (!is_admin() && is_a($post, 'WP_Post') && has_shortcode($post->post_content, 'mc_sampling')) {
+        
+        mc_debug_to_console('[mc_sampling] shortcode found. Overriding options.');
+        error_log('MC SAMPLING DEBUG: [mc_sampling] shortcode found. Overriding options.');
+
+        if (!is_array($woocommerce_quick_order_options)) {
+            $woocommerce_quick_order_options = array();
+        }
+
+        $woocommerce_quick_order_options['disableSingleVariations'] = '1';
+    }
+}
+add_action('wp', 'mc_sampling_context_override_options');
+
 // Initialize the plugin
 new MC_Quick_Order();
